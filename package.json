@@ -1,0 +1,42 @@
+{
+  "name": "sustoj-worker",
+  "version": "0.0.0",
+  "description": "The worker process of SUSTOJ",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenSUST/sustoj-worker.git"
+  },
+  "keywords": [
+    "oj",
+    "onlinejudge",
+    "sust",
+    "nodejs"
+  ],
+  "author": "Shirasawa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/OpenSUST/sustoj-worker/issues"
+  },
+  "homepage": "https://github.com/OpenSUST/sustoj-worker#readme",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.10.0",
+    "@typescript-eslint/parser": "^4.10.0",
+    "eslint": "^7.15.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1"
+  },
+  "dependencies": {
+    "@types/node": "^14.14.14",
+    "@types/socket.io-client": "^1.4.34",
+    "simple-sandbox": "^0.3.20",
+    "socket.io-client": "^3.0.4",
+    "typescript": "^4.1.3"
+  }
+}

@@ -1,0 +1,7 @@
+.parcel-cache
+dist
+competition
+node_modules
+build
+index.js
+*.map
