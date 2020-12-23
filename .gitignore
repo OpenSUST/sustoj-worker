@@ -5,3 +5,5 @@ node_modules
 build
 index.js
 *.map
+config.json
+data

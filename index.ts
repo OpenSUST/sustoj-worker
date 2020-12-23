@@ -1,4 +1,5 @@
 import io from 'socket.io-client'
+import del from 'del'
 import * as sandbox from 'simple-sandbox'
 import { exec } from 'child_process'
 import { join, resolve } from 'path'
@@ -87,8 +88,8 @@ interface Problem {
 const user = sandbox.getUidAndGidInSandbox(config.rootfs, config.user)
 
 let problems: Problem[]
-io(config.master)
-  .on('run', async (id: number, lang: string, code: string, reply: (ret: string) => void) => {
+const socket = io(config.master, { reconnection: true })
+  .on('run', async (id: number, lang: string, code: string, reply: (ret: string, msg?: string) => void) => {
     const problem = problems[id]
     const dir = resolve('data/' + Math.random().toString(36).slice(2) + Date.now().toString(36))
     await fsp.mkdir(dir)
@@ -96,7 +97,16 @@ io(config.master)
     try {
       const langCfg = config.language[lang]
       await fsp.writeFile(join(dir, langCfg.name), code)
-      if (langCfg.compile) await execAsync(langCfg.compile, dir)
+      if (langCfg.compile) {
+        try {
+          await execAsync(langCfg.compile, dir)
+        } catch (e) {
+          ret = ''
+          reply('COMPILE', e.message)
+          console.log('COMPILE')
+          return
+        }
+      }
       const stdin = join(dir, 'stdin.txt')
       const stdout = join(dir, 'stdout.txt')
       await fsp.writeFile(stdin, problem.input)
@@ -113,8 +123,8 @@ io(config.master)
             limit: -1
           }
         ],
-        parameters: langCfg.args,
-        environments: config.environments,
+        parameters: langCfg.args || [],
+        environments: config.environments || [],
         redirectBeforeChroot: false,
         mountProc: true,
         executable: langCfg.exec,
@@ -160,11 +170,19 @@ io(config.master)
     } catch (e) {
       console.log(e)
     } finally {
-      reply(ret)
-      await fsp.rmdir(dir, { recursive : true })
+      if (ret) {
+        reply(ret)
+        console.log(ret)
+      }
+      await del(dir).catch(console.error)
     }
   })
-  .emit('worker-login', config.token, config.process, (it: Problem[]) => {
-    it.forEach(prob => (prob.unformated.replace(/\s/g, '')))
+  .on('connect', () => socket.emit('worker-login', config.token, config.process, (err: string | null, it: Problem[]) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    console.log('Connected!')
+    it.forEach(prob => (prob.unformated = prob.output.replace(/\s/g, '')))
     problems = it
-  })
+  }))

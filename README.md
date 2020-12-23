@@ -7,7 +7,20 @@
 #### Packages
 
 ```bash
-sudo apt install build-essential clang++-9 libfmt-dev
+sudo apt install build-essential clang++-9 libfmt-dev cmake
+```
+
+If the following text appears:
+
+```
+E: Unable to locate package clang++-9
+E: Couldn't find any package by regex 'clang++-9'
+```
+
+You need to add a source to `/etc/apt/sources.list`:
+
+```
+deb http://deb.debian.org/debian/ testing main
 ```
 
 #### Kernel
@@ -16,9 +29,9 @@ sudo apt install build-essential clang++-9 libfmt-dev
 sudo nano /etc/default/grub
 ```
 
-Add swapaccount=1 to GRUB_CMDLINE_LINUX_DEFAULT:
+Add `swapaccount=1` to `GRUB_CMDLINE_LINUX_DEFAULT`:
 
-```txt
+```
 GRUB_CMDLINE_LINUX_DEFAULT="quiet splash cgroup_enable=memory swapaccount=1"
 ```
 
@@ -36,6 +49,10 @@ sudo reboot
 sudo mkdir /opt/rootfs
 
 sudo curl -L https://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86_64/alpine-minirootfs-3.12.3-x86_64.tar.gz | tar -xzvf - -C /opt/rootfs
+
+sudo chroot /opt/rootfs /bin/sh
+
+adduser sandbox
 ```
 
 ### Build
@@ -63,19 +80,17 @@ Then edit the `config.json` file, and restart the process.
 #### Prerequisites
 
 ```bash
-su
+sudo chroot /opt/rootfs /bin/sh
 
-echo "nameserver: 1.1.1.1" > /opt/rootfs/etc/resolv.conf
+echo "nameserver: 1.1.1.1" > /etc/resolv.conf
 
-chroot /opt/rootfs /bin/sh
-
-apt update
+apk update
 ```
 
 #### Python
 
 ```bash
-apt add python3
+apk add python3
 ```
 
 #### Java
