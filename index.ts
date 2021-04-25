@@ -117,7 +117,7 @@ const run = async (problem: Problem, src: string, langCfg: Language, stdin: stri
   switch ((await sanboxProcess.waitForStop()).status) {
     case sandbox.SandboxStatus.OK: break
     case sandbox.SandboxStatus.MemoryLimitExceeded: return 'MEMORY'
-    case sandbox.SandboxStatus.TimeLimitExceeded: return 'TIME'
+    case sandbox.SandboxStatus.TimeLimitExceeded: return 'TIMEOUT'
     case sandbox.SandboxStatus.RuntimeError: return 'RUNTIME'
     default: return 'ERROR'
   }

@@ -85,11 +85,15 @@ Then see: https://github.com/syzoj/sandbox-rootfs-ng/blob/master/install.sh
 
 ### C/C++
 
+> Host install only.
+
 ```bash
 apt-get install gcc g++
 ```
 
 ### Java
+
+> Both host and virtual machine install.
 
 ```bash
 # sudo mount --bind /dev/pts /opt/rootfs/dev/pts
@@ -100,6 +104,8 @@ apt-get install openjdk-11-jdk
 ```
 
 ### Python
+
+> Virtual machine install only.
 
 ```bash
 apt-get install python3.9
