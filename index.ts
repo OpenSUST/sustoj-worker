@@ -53,7 +53,7 @@ if (!fs.existsSync('config.json')) fs.writeFileSync('config.json', JSON.stringif
     },
     python: {
       name: 'main.py',
-      args: ['main.py'],
+      args: ['-u', 'main.py'],
       exec: 'pypy',
       memory: 2,
       time: 2.5
@@ -152,7 +152,7 @@ const socket = io(config.master, { reconnection: true })
       }
       const stdin = join(dir, 'stdin.txt')
       const stdout = join(dir, 'stdout.txt')
-      for (; index < problem.inputs.length; index++) if ((ret = await run(problem, dir, langCfg, stdin, stdout, index)) != 'ACCEPTED') break
+      for (; index < problem.inputs.length; index++) if ((ret = await run(problem, dir, langCfg, stdin, stdout, index)) !== 'ACCEPTED') break
     } catch (e) {
       console.log(e)
     } finally {
