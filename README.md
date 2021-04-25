@@ -46,11 +46,11 @@ sudo reboot
 #### Rootfs
 
 ```bash
-sudo mkdir /opt/rootfs
+sudo apt-get install debootstrap
 
-sudo curl -L https://dl-cdn.alpinelinux.org/alpine/v3.12/releases/x86_64/alpine-minirootfs-3.12.3-x86_64.tar.gz | tar -xzvf - -C /opt/rootfs
+debootstrap --components=main,universe buster /opt/rootfs https://mirrors.tuna.tsinghua.edu.cn/debian
 
-sudo chroot /opt/rootfs /bin/sh
+sudo chroot /opt/rootfs /bin/bash
 
 adduser sandbox
 ```
@@ -77,26 +77,32 @@ Then edit the `config.json` file, and restart the process.
 
 ### Add language support
 
-#### Prerequisites
-
 ```bash
-sudo chroot /opt/rootfs /bin/sh
-
-echo "nameserver: 1.1.1.1" > /etc/resolv.conf
-
-apk update
+sudo chroot /opt/rootfs /bin/bash
 ```
 
-#### Python
+Then see: https://github.com/syzoj/sandbox-rootfs-ng/blob/master/install.sh
+
+### C/C++
 
 ```bash
-apk add python3
+apt-get install gcc g++
 ```
 
-#### Java
+### Java
 
 ```bash
-apk --no-cache add openjdk11 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+apt-get install openjdk-11-jdk
+```
+
+### Python
+
+```bash
+apt-get install python3.9
+
+# or
+
+apt-get install pypy
 ```
 
 ## Author

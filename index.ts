@@ -10,6 +10,8 @@ const terminationHandler = () => process.exit()
 process.on('SIGTERM', terminationHandler)
 process.on('SIGINT', terminationHandler)
 
+interface Language { name: string, compile?: string, args?: string[], exec: string }
+
 interface Config {
   token: string
   master: string
@@ -18,7 +20,7 @@ interface Config {
   rootfs: string
   outputLimit: number
   environments: string[]
-  language: Record<string, { name: string, compile?: string, args?: string[], exec: string, memory: number, time: number }>
+  language: Record<string, Language>
 }
 
 if (!fs.existsSync('data')) fs.mkdirSync('data')
@@ -34,31 +36,23 @@ if (!fs.existsSync('config.json')) fs.writeFileSync('config.json', JSON.stringif
     c: {
       name: 'main.c',
       compile: 'gcc main.c -o main -fno-asm -Wall -lm --static -DONLINE_JUDGE',
-      exec: './main',
-      memory: 128,
-      time: 1
+      exec: './main'
     },
     cpp: {
       name: 'main.cpp',
       compile: 'g++ -fno-asm -Wall -lm --static -DONLINE_JUDGE -o main main.cpp',
-      exec: './main',
-      memory: 128,
-      time: 1
+      exec: './main'
     },
     java: {
       name: 'Main.java',
       compile: 'javac Main.java',
       args: ['Main.class'],
-      exec: 'java',
-      memory: 512,
-      time: 2
+      exec: 'java'
     },
     python: {
       name: 'main.py',
       args: ['main.py'],
-      exec: 'pypy',
-      memory: 512,
-      time: 2
+      exec: 'pypy'
     }
   }
 } as Config, null, 2))
@@ -78,14 +72,58 @@ interface Problem {
   config: {
     title: string
     tags?: string[]
+    memory: number
+    time: number
   }
-  output: string
-  input: string
-  unformated: string
+  outputs: string[]
+  inputs: string[]
+  unformateds: string[]
   description: string
 }
 
 const user = sandbox.getUidAndGidInSandbox(config.rootfs, config.user)
+
+const run = async (problem: Problem, src: string, langCfg: Language, stdin: string, stdout: string, index: number) => {
+  await fsp.writeFile(stdin, problem.inputs[index])
+  const sanboxProcess = sandbox.startSandbox({
+    time: problem.config.time,
+    memory: problem.config.memory * 1024 * 1024,
+    hostname: 'SustOJ',
+    chroot: config.rootfs,
+    process: 1,
+    mounts: [
+      {
+        src,
+        dst: '/sandbox',
+        limit: -1
+      }
+    ],
+    parameters: langCfg.args || [],
+    environments: config.environments || [],
+    redirectBeforeChroot: false,
+    mountProc: true,
+    executable: langCfg.exec,
+    cgroup: 'asdf',
+    workingDirectory: '/sandbox',
+    stdin: './stdin.txt',
+    stdout: './stdout.txt',
+    stderr: './stdout.txt',
+    user
+  })
+  switch ((await sanboxProcess.waitForStop()).status) {
+    case sandbox.SandboxStatus.OK: break
+    case sandbox.SandboxStatus.MemoryLimitExceeded: return 'MEMORY'
+    case sandbox.SandboxStatus.TimeLimitExceeded: return 'TIME'
+    case sandbox.SandboxStatus.RuntimeError: return 'RUNTIME'
+    default: return 'ERROR'
+  }
+  let stat: fs.Stats
+  try { stat = await fsp.stat(stdout) } catch { return 'WRONG' }
+  if (stat.size > config.outputLimit) return 'OUTPUT'
+  const data = await fsp.readFile(stdout, 'utf-8')
+  if (data.startsWith(problem.outputs[index])) return 'ACCEPTED'
+  return data.replace(/\s/g, '') === problem.unformateds[index] ? 'PRESENTATION' : 'WRONG'
+}
 
 let problems: Problem[]
 const socket = io(config.master, { reconnection: true })
@@ -109,64 +147,7 @@ const socket = io(config.master, { reconnection: true })
       }
       const stdin = join(dir, 'stdin.txt')
       const stdout = join(dir, 'stdout.txt')
-      await fsp.writeFile(stdin, problem.input)
-      const sanboxProcess = sandbox.startSandbox({
-        time: langCfg.time * 1000,
-        memory: langCfg.memory * 1024 * 1024,
-        hostname: 'SustOJ',
-        chroot: config.rootfs,
-        process: 1,
-        mounts: [
-          {
-            src: dir,
-            dst: '/sandbox',
-            limit: -1
-          }
-        ],
-        parameters: langCfg.args || [],
-        environments: config.environments || [],
-        redirectBeforeChroot: false,
-        mountProc: true,
-        executable: langCfg.exec,
-        cgroup: 'asdf',
-        workingDirectory: '/sandbox',
-        stdin: './stdin.txt',
-        stdout: './stdout.txt',
-        stderr: './stdout.txt',
-        user
-      })
-      switch ((await sanboxProcess.waitForStop()).status) {
-        case sandbox.SandboxStatus.OK: break
-        case sandbox.SandboxStatus.MemoryLimitExceeded:
-          ret = 'MEMORY'
-          return
-        case sandbox.SandboxStatus.TimeLimitExceeded:
-          ret = 'TIME'
-          return
-        case sandbox.SandboxStatus.RuntimeError:
-          ret = 'RUNTIME'
-          return
-        default:
-          ret = 'ERROR'
-          return
-      }
-      let stat: fs.Stats
-      try {
-        stat = await fsp.stat(stdout)
-      } catch {
-        ret = 'WRONG'
-        return
-      }
-      if (stat.size > config.outputLimit) {
-        ret = 'OUTPUT'
-        return
-      }
-      const data = await fsp.readFile(stdout, 'utf-8')
-      if (data.startsWith(problem.output)) {
-        ret = 'ACCEPTED'
-        return
-      }
-      ret = data.replace(/\s/g, '') === problem.unformated ? 'PRESENTATION' : 'WRONG'
+      for (let i = 0; i < problem.inputs.length; i++) ret = await run(problem, dir, langCfg, stdin, stdout, i)
     } catch (e) {
       console.log(e)
     } finally {
@@ -183,6 +164,6 @@ const socket = io(config.master, { reconnection: true })
       return
     }
     console.log('Connected!')
-    it.forEach(prob => (prob.unformated = prob.output.replace(/\s/g, '')))
+    it.forEach(prob => (prob.unformateds = prob.outputs.map(it => it.replace(/\s/g, ''))))
     problems = it
   }))
