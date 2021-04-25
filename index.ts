@@ -30,7 +30,7 @@ if (!fs.existsSync('config.json')) fs.writeFileSync('config.json', JSON.stringif
   process: 2,
   user: 'sandbox',
   rootfs: '/opt/rootfs',
-  outputLimit: 1024 * 100, // 100KB
+  outputLimit: 1024 * 1024 * 5, // 5MB
   environments: [],
   language: {
     c: {
@@ -46,7 +46,7 @@ if (!fs.existsSync('config.json')) fs.writeFileSync('config.json', JSON.stringif
     java: {
       name: 'Main.java',
       compile: 'javac Main.java',
-      args: ['Main.class'],
+      args: ['Main'],
       exec: 'java',
       memory: 2.5,
       time: 2
@@ -94,7 +94,7 @@ const run = async (problem: Problem, src: string, langCfg: Language, stdin: stri
     memory: problem.config.memory * 1024 * 1024 * (langCfg.memory || 1),
     hostname: 'SustOJ',
     chroot: config.rootfs,
-    process: 1,
+    process: 20,
     mounts: [
       {
         src,
