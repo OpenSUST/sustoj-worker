@@ -136,7 +136,7 @@ const socket = io(config.master, { reconnection: true })
     const dir = resolve('data/' + Math.random().toString(36).slice(2) + Date.now().toString(36))
     await fsp.mkdir(dir)
     let ret = 'ERROR'
-    let index = 1
+    let index = 0
     try {
       const langCfg = config.language[lang]
       await fsp.writeFile(join(dir, langCfg.name), code)
@@ -152,7 +152,7 @@ const socket = io(config.master, { reconnection: true })
       }
       const stdin = join(dir, 'stdin.txt')
       const stdout = join(dir, 'stdout.txt')
-      for (; index <= problem.inputs.length; index++) ret = await run(problem, dir, langCfg, stdin, stdout, index)
+      for (; index < problem.inputs.length; index++) if ((ret = await run(problem, dir, langCfg, stdin, stdout, index)) != 'ACCEPTED') break
     } catch (e) {
       console.log(e)
     } finally {
