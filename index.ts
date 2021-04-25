@@ -46,7 +46,7 @@ if (!fs.existsSync('config.json')) fs.writeFileSync('config.json', JSON.stringif
     java: {
       name: 'Main.java',
       compile: 'javac Main.java',
-      args: ['Main'],
+      args: ['', 'Main'],
       exec: 'java',
       memory: 2.5,
       time: 2
