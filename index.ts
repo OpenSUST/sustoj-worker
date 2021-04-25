@@ -136,6 +136,7 @@ const socket = io(config.master, { reconnection: true })
     const dir = resolve('data/' + Math.random().toString(36).slice(2) + Date.now().toString(36))
     await fsp.mkdir(dir)
     let ret = 'ERROR'
+    let index = 1
     try {
       const langCfg = config.language[lang]
       await fsp.writeFile(join(dir, langCfg.name), code)
@@ -151,12 +152,12 @@ const socket = io(config.master, { reconnection: true })
       }
       const stdin = join(dir, 'stdin.txt')
       const stdout = join(dir, 'stdout.txt')
-      for (let i = 0; i < problem.inputs.length; i++) ret = await run(problem, dir, langCfg, stdin, stdout, i)
+      for (; index <= problem.inputs.length; index++) ret = await run(problem, dir, langCfg, stdin, stdout, index)
     } catch (e) {
       console.log(e)
     } finally {
       if (ret) {
-        reply(ret)
+        reply(ret, index + '/' + problem.inputs.length)
         console.log(ret)
       }
       await del(dir).catch(console.error)
