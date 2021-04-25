@@ -92,6 +92,10 @@ apt-get install gcc g++
 ### Java
 
 ```bash
+# sudo mount --bind /dev/pts /opt/rootfs/dev/pts
+
+mount -t proc proc /proc
+
 apt-get install openjdk-11-jdk
 ```
 

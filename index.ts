@@ -10,7 +10,7 @@ const terminationHandler = () => process.exit()
 process.on('SIGTERM', terminationHandler)
 process.on('SIGINT', terminationHandler)
 
-interface Language { name: string, compile?: string, args?: string[], exec: string }
+interface Language { name: string, compile?: string, args?: string[], exec: string, memory?: number, time?: number }
 
 interface Config {
   token: string
@@ -47,12 +47,16 @@ if (!fs.existsSync('config.json')) fs.writeFileSync('config.json', JSON.stringif
       name: 'Main.java',
       compile: 'javac Main.java',
       args: ['Main.class'],
-      exec: 'java'
+      exec: 'java',
+      memory: 2.5,
+      time: 2
     },
     python: {
       name: 'main.py',
       args: ['main.py'],
-      exec: 'pypy'
+      exec: 'pypy',
+      memory: 2,
+      time: 2.5
     }
   }
 } as Config, null, 2))
@@ -86,8 +90,8 @@ const user = sandbox.getUidAndGidInSandbox(config.rootfs, config.user)
 const run = async (problem: Problem, src: string, langCfg: Language, stdin: string, stdout: string, index: number) => {
   await fsp.writeFile(stdin, problem.inputs[index])
   const sanboxProcess = sandbox.startSandbox({
-    time: problem.config.time,
-    memory: problem.config.memory * 1024 * 1024,
+    time: problem.config.time * (langCfg.time || 1),
+    memory: problem.config.memory * 1024 * 1024 * (langCfg.memory || 1),
     hostname: 'SustOJ',
     chroot: config.rootfs,
     process: 1,
