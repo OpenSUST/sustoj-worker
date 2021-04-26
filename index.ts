@@ -1,6 +1,7 @@
 import io from 'socket.io-client'
 import del from 'del'
 import * as sandbox from 'simple-sandbox'
+import * as lzma from 'lzma-native'
 import { exec } from 'child_process'
 import { join, resolve } from 'path'
 import fs, { promises as fsp } from 'fs'
@@ -130,6 +131,7 @@ const run = async (problem: Problem, src: string, langCfg: Language, stdin: stri
 }
 
 let problems: Problem[]
+let problemsHash = ''
 const socket = io(config.master, { reconnection: true })
   .on('run', async (id: number, lang: string, code: string, reply: (ret: string, msg?: string) => void) => {
     const problem = problems[id]
@@ -163,12 +165,20 @@ const socket = io(config.master, { reconnection: true })
       await del(dir).catch(console.error)
     }
   })
-  .on('connect', () => socket.emit('worker-login', config.token, config.process, (err: string | null, it: Problem[]) => {
+  .on('connect', () => socket.emit('worker-login', config.token, config.process, (err: string | null, pro: Buffer, hash: string) => {
     if (err) {
       console.error(err)
       return
     }
-    console.log('Connected!')
-    it.forEach(prob => (prob.unformateds = prob.outputs.map(it => it.replace(/\s/g, ''))))
-    problems = it
+    if (problemsHash === hash) {
+      console.log('Connected!')
+      return
+    }
+    console.log('Decompressing...')
+    lzma.decompress(pro, undefined, data => {
+      problems = JSON.parse(data.toString())
+      problems.forEach(prob => (prob.unformateds = prob.outputs.map(it => it.replace(/\s/g, ''))))
+      problemsHash = hash
+      console.log('Connected!')
+    })
   }))
