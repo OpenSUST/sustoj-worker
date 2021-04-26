@@ -54,7 +54,7 @@ if (!fs.existsSync('config.json')) fs.writeFileSync('config.json', JSON.stringif
     python: {
       name: 'main.py',
       args: ['-u', 'main.py'],
-      exec: 'pypy',
+      exec: 'pypy3',
       memory: 2,
       time: 2.5
     }
