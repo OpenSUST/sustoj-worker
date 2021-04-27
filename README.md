@@ -112,7 +112,7 @@ apt-get install python3.9
 
 # or
 
-apt-get install pypy
+apt-get install pypy3
 ```
 
 ## Author
