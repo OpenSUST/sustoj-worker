@@ -112,7 +112,7 @@ const run = async (problem: Problem, src: string, langCfg: Language, stdin: stri
     workingDirectory: '/sandbox',
     stdin: './stdin.txt',
     stdout: './stdout.txt',
-    stderr: './stdout.txt',
+    stderr: null as any,
     user
   })
   switch ((await sanboxProcess.waitForStop()).status) {
